@@ -11,11 +11,8 @@ import (
 func DepthComparison(depths ...int) int {
 	var result int
 
-	for index, value := range depths {
-		if index == 0 {
-			continue
-		}
-		if value > depths[index-1] {
+	for i := 1; i < len(depths); i++ {
+		if depths[i] > depths[i-1] {
 			result += 1
 		}
 	}
@@ -27,11 +24,10 @@ func SlidingWindowComparison(depths ...int) int {
 	var result int
 	slidingWindowDepths := make([]int, 0)
 
-	for index, value := range depths {
-		if index > 1 {
-			slidingWindowDepths = append(slidingWindowDepths, value+depths[index-1]+depths[index-2])
-		}
+	for i := 2; i < len(depths); i++ {
+		slidingWindowDepths = append(slidingWindowDepths, depths[i]+depths[i-1]+depths[i-2])
 	}
+
 	result = DepthComparison(slidingWindowDepths...)
 	return result
 }
