@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: k2bd/advent-readme-stars@v1
         with:
-          userId: 659531
+          userId: 1480937
           sessionCookie: ${{ secrets.AOC_SESSION }}
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
