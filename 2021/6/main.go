@@ -8,26 +8,8 @@ import (
 	"strings"
 )
 
-type Fish struct {
-	ocean *Ocean
-	timer int
-}
-
-func (f *Fish) notify() *Fish {
-	f.timer--
-	if f.timer < 0 {
-		f.timer = 6
-		newFish := &Fish{
-			timer: 8,
-			ocean: f.ocean,
-		}
-		return newFish
-	}
-	return nil
-}
-
 type Ocean struct {
-	fish []*Fish
+	fish map[int]int
 }
 
 func main() {
@@ -43,32 +25,31 @@ func main() {
 
 	inputLists := strings.Split(string(content), ",")
 
-	var ocean Ocean
+	ocean := Ocean{
+		fish: map[int]int{8: 0, 7: 0, 6: 0, 5: 0, 4: 0, 3: 0, 2: 0, 1: 0, 0: 0},
+	}
 	for _, v := range inputLists {
 		num, _ := strconv.Atoi(v)
-		fish := &Fish{
-			timer: num,
-			ocean: &ocean,
-		}
-		ocean.fish = append(ocean.fish, fish)
+		ocean.fish[num] += 1
 	}
 
-	// why doesn't this work?
-	// for i := 0; i < 80; i++ {
-	// 	for j := 0; j < len(ocean.fish); j++ {
-	// 		ocean.fish[j].notify()
-	// 	}
-	// }
-
-	for i := 0; i < 80; i++ {
-		var catchOfTheDay []*Fish
-		for _, f := range ocean.fish {
-			newFish := f.notify()
-			if newFish != nil {
-				catchOfTheDay = append(catchOfTheDay, newFish)
+	for i := 0; i < 256; i++ {
+		nextState := make(map[int]int)
+		for k := range ocean.fish {
+			switch k {
+			case 0:
+				nextState[8] += ocean.fish[0]
+				nextState[6] += ocean.fish[0]
+			default:
+				nextState[k-1] += ocean.fish[k]
 			}
 		}
-		ocean.fish = append(ocean.fish, catchOfTheDay...)
+		ocean.fish = nextState
+
 	}
-	fmt.Println(len(ocean.fish))
+	total := 0
+	for _, count := range ocean.fish {
+		total += count
+	}
+	fmt.Println(total)
 }
