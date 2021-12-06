@@ -17,42 +17,13 @@ type point struct {
 	y int
 }
 
-func Part1(values []Line) int {
+func countOverlappingPoints(values []Line) int {
 	var coveredPoints = make(map[string]int)
 
 	for _, value := range values {
 		for _, point := range value.points {
 			xString := strconv.Itoa(point.x)
 			yString := strconv.Itoa(point.y)
-			pointString := xString + "," + yString
-			_, ok := coveredPoints[pointString]
-			if ok {
-				coveredPoints[pointString]++
-			} else {
-				coveredPoints[pointString] = 1
-			}
-
-		}
-	}
-
-	result := 0
-	for _, value := range coveredPoints {
-		if value > 1 {
-			result += 1
-		}
-	}
-	return result
-}
-
-func Part2(values []Line) int {
-	var coveredPoints = make(map[string]int)
-
-	for _, value := range values {
-		for _, point := range value.points {
-			x := point.x
-			y := point.y
-			xString := strconv.Itoa(x)
-			yString := strconv.Itoa(y)
 			pointString := xString + "," + yString
 			_, ok := coveredPoints[pointString]
 			if ok {
@@ -184,6 +155,6 @@ func main() {
 		linesWithDiagonals = append(linesWithDiagonals, Line{points: parsedPoints})
 	}
 
-	fmt.Println(Part1(linesWithoutDiagonals)) // 5373
-	fmt.Println(Part2(linesWithDiagonals))    // 21514
+	fmt.Println(countOverlappingPoints(linesWithoutDiagonals)) // 5373
+	fmt.Println(countOverlappingPoints(linesWithDiagonals))    // 21514
 }

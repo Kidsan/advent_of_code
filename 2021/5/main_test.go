@@ -68,13 +68,13 @@ func TestParsePoints(t *testing.T) {
 	}
 }
 
-func TestPart1(t *testing.T) {
+func TestCountOverlappingPoints(t *testing.T) {
 	tt := []struct {
 		input         []Line
 		expectedValue int
 	}{
 
-		{
+		{ // no diagonals
 			input: []Line{
 				{
 					points: []point{
@@ -114,25 +114,8 @@ func TestPart1(t *testing.T) {
 			},
 			expectedValue: 5,
 		},
-	}
 
-	for _, tc := range tt {
-		t.Run("TestPart1", func(t *testing.T) {
-			actual := Part1(tc.input)
-			if actual != tc.expectedValue {
-				t.Errorf("Got %d, expected %d", actual, tc.expectedValue)
-			}
-		})
-	}
-}
-
-func TestPart2(t *testing.T) {
-	tt := []struct {
-		input         []Line
-		expectedValue int
-	}{
-
-		{
+		{ // has diagonal lines
 			input: []Line{
 				{
 					points: []point{
@@ -196,8 +179,8 @@ func TestPart2(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		t.Run("TestPart1", func(t *testing.T) {
-			actual := Part2(tc.input)
+		t.Run("TestCountOverlappingPoints", func(t *testing.T) {
+			actual := countOverlappingPoints(tc.input)
 			if actual != tc.expectedValue {
 				t.Errorf("Got %d, expected %d", actual, tc.expectedValue)
 			}
