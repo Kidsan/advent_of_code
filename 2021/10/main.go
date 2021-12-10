@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -58,12 +59,75 @@ func part1(input []string) int {
 			errors = append(errors, errorInLine)
 		}
 	}
-	fmt.Println(errors)
+
 	for _, v := range errors {
 		score := scoring[v]
 		result += score
 	}
 	return result
+}
+
+func filterOutInvalidLines(input []string) []string {
+	result := make([]string, 0)
+	for _, line := range input {
+		if errorInLine := findFirstError(line); errorInLine == "" {
+			result = append(result, line)
+		}
+	}
+	return result
+}
+
+func findMissingLineEnding(input string) string {
+	ending := ""
+	for _, letter := range input {
+		parsed := string(letter)
+		switch parsed {
+		case "[":
+			ending = "]" + ending
+		case "(":
+			ending = ")" + ending
+		case "{":
+			ending = "}" + ending
+		case "<":
+			ending = ">" + ending
+		case "}":
+			ending = strings.Replace(ending, "}", "", 1)
+		case "]":
+			ending = strings.Replace(ending, "]", "", 1)
+		case ">":
+			ending = strings.Replace(ending, ">", "", 1)
+		case ")":
+			ending = strings.Replace(ending, ")", "", 1)
+		}
+	}
+
+	return ending
+}
+
+func getEndingScore(input string) int {
+	result := 0
+	scoring := map[string]int{")": 1, "]": 2, "}": 3, ">": 4}
+
+	for _, v := range input {
+		letter := string(v)
+		result = (result * 5) + scoring[letter]
+	}
+
+	return result
+
+}
+
+func part2(input []string) int {
+	lines := filterOutInvalidLines(input)
+	scores := make([]int, 0)
+
+	for _, line := range lines {
+		lineEnding := findMissingLineEnding(line)
+		scores = append(scores, getEndingScore(lineEnding))
+	}
+
+	sort.Ints(scores)
+	return scores[len(scores)/2]
 }
 
 func main() {
@@ -80,4 +144,5 @@ func main() {
 	inputLists := strings.Split(string(content), "\n")
 
 	fmt.Println(part1(inputLists))
+	fmt.Println(part2(inputLists))
 }
