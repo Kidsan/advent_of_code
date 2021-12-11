@@ -68,16 +68,10 @@ func tick(input [][]int) int {
 }
 
 func part1(input [][]int) int {
-	duplicate := make([][]int, len(input))
-	for i := range input {
-		duplicate[i] = make([]int, len(input[i]))
-		copy(duplicate[i], input[i])
-	}
-
 	result := 0
 
 	for i := 0; i < 100; i++ {
-		result += tick(duplicate)
+		result += tick(input)
 	}
 
 	return result
@@ -118,6 +112,12 @@ func main() {
 		}
 	}
 
+	part2Input := make([][]int, len(cells))
+	for i := range cells {
+		part2Input[i] = make([]int, len(cells[i]))
+		copy(part2Input[i], cells[i])
+	}
+
 	fmt.Println(part1(cells))
-	fmt.Println(part2(cells))
+	fmt.Println(part2(part2Input))
 }
