@@ -78,30 +78,30 @@ func filterOutInvalidLines(input []string) []string {
 }
 
 func findMissingLineEnding(input string) string {
-	ending := ""
+	ending := make([]string, 0)
 	for _, letter := range input {
 		parsed := string(letter)
 		switch parsed {
 		case "[":
-			ending = "]" + ending
+			ending = append([]string{"]"}, ending...)
 		case "(":
-			ending = ")" + ending
+			ending = append([]string{")"}, ending...)
 		case "{":
-			ending = "}" + ending
+			ending = append([]string{"}"}, ending...)
 		case "<":
-			ending = ">" + ending
+			ending = append([]string{">"}, ending...)
 		case "}":
-			ending = strings.Replace(ending, "}", "", 1)
+			ending = ending[1:]
 		case "]":
-			ending = strings.Replace(ending, "]", "", 1)
+			ending = ending[1:]
 		case ">":
-			ending = strings.Replace(ending, ">", "", 1)
+			ending = ending[1:]
 		case ")":
-			ending = strings.Replace(ending, ")", "", 1)
+			ending = ending[1:]
 		}
 	}
 
-	return ending
+	return strings.Join(ending, "")
 }
 
 func getEndingScore(input string) int {
