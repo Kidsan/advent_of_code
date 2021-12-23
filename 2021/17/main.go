@@ -89,7 +89,7 @@ func part1(xRange, yRange []int) int {
 	validVelocities := getPossibleVelocities(xRange, yRange)
 
 	peak := 0
-	for k, positions := range validVelocities {
+	for _, positions := range validVelocities {
 		for _, position := range positions {
 			parsed := strings.Split(position, ",")
 			y, _ := strconv.Atoi(parsed[1])
