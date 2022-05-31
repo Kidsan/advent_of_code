@@ -17,7 +17,7 @@ fn solve(input: &String, desired_prefix: &str) -> i32 {
         if f.starts_with(desired_prefix) {
             break;
         }
-        i += 1
+        i += 1;
     }
     return i
 }
