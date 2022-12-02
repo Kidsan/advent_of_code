@@ -1,10 +1,8 @@
-use std::fs;
-
 fn main() {
-    let contents = fs::read_to_string("input.txt").expect("Something went wrong reading the file");
+    let contents = include_str!("../input.txt").lines();
 
     let result_one: i32 = contents
-        .split("\n")
+        .clone()
         .map(|positions| match positions {
             "A X" => 4,
             "B X" => 1,
@@ -20,7 +18,7 @@ fn main() {
         .sum();
 
     let result_two: i32 = contents
-        .split("\n")
+        .clone()
         .map(|positions| match positions {
             "A X" => 3,
             "B X" => 1,
