@@ -16,43 +16,29 @@ fn main() {
     let height = grid[0].len();
 
     let mut visible = (width * 2) + (height * 2) - 4;
-    println!("{visible}");
-    let X = 1;
-    let Y = 1;
+
+    let position_x = 1;
+    let position_y = 1;
 
     let limit_x = width - 1;
     let limit_y = height - 1;
 
-    println!("limits: {limit_x}, {limit_y}");
+    let mut scores: Vec<i32> = Vec::new();
 
-    for x in X..limit_x {
-        for y in Y..limit_y {
+    for x in position_x..limit_x {
+        for y in position_y..limit_y {
             let current = grid[x][y];
             if search(&grid, current, x, y) {
                 visible += 1;
             }
+            scores.push(get_view_score(&grid, current, x, y));
         }
     }
 
-    // while X < limit_x && Y < limit_y {
-    //     let current = grid[X][Y];
-    //     println!("pos: {X}, {Y}");
-    //     if search(&grid, current, X, Y) {
-    //         visible += 1;
-    //     }
-    //     if X <= limit_x {
-    //         println!("iter");
-    //         X += 1;
-    //     }
-
-    //     if Y <= limit_y {
-    //         println!("iter");
-    //         Y += 1;
-    //     }
-    // }
+    scores.sort();
 
     println!("Part One: {}", visible);
-    // println!("Part Two: {}", p2);
+    println!("Part Two: {}", scores.last().unwrap());
 }
 
 fn search(grid: &Vec<Vec<usize>>, current: usize, x: usize, y: usize) -> bool {
@@ -61,7 +47,6 @@ fn search(grid: &Vec<Vec<usize>>, current: usize, x: usize, y: usize) -> bool {
         || search_down(grid, current, x, y)
         || search_right(grid, current, x, y)
     {
-        println!("{x},{y}");
         return true;
     }
     return false;
@@ -107,12 +92,75 @@ fn search_right(grid: &Vec<Vec<usize>>, current: usize, x: usize, y: usize) -> b
     false
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+fn get_view_score(grid: &Vec<Vec<usize>>, current: usize, x: usize, y: usize) -> i32 {
+    let score_up = visible_trees_north(grid, &0, current, x, y);
+    let score_left = visible_trees_west(grid, &0, current, x, y);
+    let score_down = visible_trees_south(grid, &0, current, x, y);
+    let score_right = visible_trees_east(grid, &0, current, x, y);
 
-    // #[test]
-    // fn test_parse_command() {
-    //     assert!(parse_command("$ ls").is_ok());
-    // }
+    return score_down * score_left * score_right * score_up;
+}
+
+fn visible_trees_north(
+    grid: &Vec<Vec<usize>>,
+    count: &i32,
+    current: usize,
+    x: usize,
+    y: usize,
+) -> i32 {
+    if y == 0 && current > grid[x][y] {
+        return *count;
+    }
+    if current > grid[x][y - 1] {
+        return visible_trees_north(grid, &(count + 1), current, x, y - 1);
+    }
+    *count + 1
+}
+
+fn visible_trees_west(
+    grid: &Vec<Vec<usize>>,
+    count: &i32,
+    current: usize,
+    x: usize,
+    y: usize,
+) -> i32 {
+    if x == 0 && current > grid[x][y] {
+        return *count;
+    }
+    if current > grid[x - 1][y] {
+        return visible_trees_west(grid, &(count + 1), current, x - 1, y);
+    }
+    *count + 1
+}
+
+fn visible_trees_south(
+    grid: &Vec<Vec<usize>>,
+    count: &i32,
+    current: usize,
+    x: usize,
+    y: usize,
+) -> i32 {
+    if y == grid[0].len() - 1 && current > grid[x][y] {
+        return *count;
+    }
+    if current > grid[x][y + 1] {
+        return visible_trees_south(grid, &(count + 1), current, x, y + 1);
+    }
+    *count + 1
+}
+
+fn visible_trees_east(
+    grid: &Vec<Vec<usize>>,
+    count: &i32,
+    current: usize,
+    x: usize,
+    y: usize,
+) -> i32 {
+    if x == grid.len() - 1 && current > grid[x][y] {
+        return *count;
+    }
+    if current > grid[x + 1][y] {
+        return visible_trees_east(grid, &(count + 1), current, x + 1, y);
+    }
+    *count + 1
 }
