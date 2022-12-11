@@ -5,8 +5,6 @@ fn main() {
         .split("\n\n")
         .collect::<Vec<&str>>();
 
-    // println!("{contents:#?}");
-
     let mut parsed_monkeys = parse_input(contents);
     let mut part_one_inspections = simulate_throws(&mut parsed_monkeys, 20);
 
@@ -14,10 +12,17 @@ fn main() {
     let part_one_result = part_one_inspections[part_one_inspections.len() - 1]
         * part_one_inspections[part_one_inspections.len() - 2];
 
-    // println!("{:?}", monkeys);
+    let mut part_two_inspections = simulate_throws(&mut parsed_monkeys, 10000);
 
-    // assert_eq!(16020, part_one_result);
+    part_two_inspections.sort();
+    let part_two_result = part_two_inspections[part_two_inspections.len() - 1]
+        * part_two_inspections[part_two_inspections.len() - 2];
+
     println!("part_one_result: {}", part_one_result);
+    println!("part_two_result: {}", part_two_result);
+
+    assert_eq!(part_one_result, 58786);
+    assert_eq!(part_two_result, 14952185856);
 }
 
 #[derive(Debug, Clone)]
@@ -35,7 +40,6 @@ fn parse_input(monkey_list: Vec<&str>) -> Vec<Monkey> {
         .iter()
         .map(|monkey| monkey.split("\n").collect::<Vec<&str>>())
         .map(|monkey_lines| {
-            // println!("{:?}", monkey_lines);
             let mut items = VecDeque::new();
             let mut operation = "";
             let mut operator_value = 0;
@@ -44,7 +48,6 @@ fn parse_input(monkey_list: Vec<&str>) -> Vec<Monkey> {
             let mut fail_target = 0;
 
             monkey_lines.iter().for_each(|line| {
-                // println!("foo: {line}");
                 if line.starts_with("  Starting items: ") {
                     let list = line.trim_start_matches("  Starting items: ");
                     items = list
@@ -105,7 +108,11 @@ fn simulate_throws(monkey_list: &mut Vec<Monkey>, iterations: i64) -> Vec<i64> {
         monkey_items.push(monkey.items.clone());
     }
 
-    let first_position = monkey_items.clone();
+    let mod_product = monkey_list
+        .clone()
+        .iter()
+        .map(|x| x.divisor)
+        .product::<i64>();
 
     let mut monkey_inspections = vec![0; monkey_list.len()];
 
@@ -116,18 +123,22 @@ fn simulate_throws(monkey_list: &mut Vec<Monkey>, iterations: i64) -> Vec<i64> {
             for _ in 0..count {
                 let mut i = monkey_items[index].pop_front().unwrap();
                 i = apply_operation(monkey.operation, monkey.operator_value, i);
-                i = i / &3;
-                if i % monkey.divisor == 0 {
+
+                if iterations == 20 {
+                    // part one
+                    i = i / 3;
+                } else {
+                    // store the difference using the multiplier of the common divisor
+                    i = i % mod_product;
+                }
+
+                if i.clone() % monkey.divisor == 0 {
                     monkey_items[monkey.pass_target as usize].push_back(i);
                 } else {
                     monkey_items[monkey.fail_target as usize].push_back(i);
                 }
                 monkey_inspections[index] += 1;
             }
-        }
-
-        if monkey_items == first_position {
-            println!("ay");
         }
     }
     monkey_inspections
