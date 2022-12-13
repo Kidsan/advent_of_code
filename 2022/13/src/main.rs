@@ -1,108 +1,151 @@
-use std::fmt::Error;
+use std::cmp::Ordering;
+use std::num::ParseIntError;
+use std::str::FromStr;
 
-use nom::branch::alt;
-use nom::character::complete::{line_ending, u64};
-use nom::combinator::{all_consuming, map};
-use nom::multi::separated_list0;
-use nom::sequence::{delimited, preceded, separated_pair, terminated, tuple};
-use nom::{bytes::complete::tag, multi::separated_list1};
-use nom::{Finish, IResult, Parser};
+use thiserror::Error;
+
+#[derive(Debug, Clone, Eq)]
+pub enum Packet {
+    Int(u32),
+    List(Vec<Self>),
+}
+
+impl Packet {
+    pub fn as_slice(&self) -> &[Self] {
+        if let Self::List(list) = self {
+            list.as_slice()
+        } else {
+            std::slice::from_ref(self)
+        }
+    }
+
+    fn parse_one(s: &str) -> Result<(Self, &str), ParsePacketError> {
+        use ParsePacketError::*;
+        if let Some(mut s) = s.strip_prefix('[') {
+            let mut list = vec![];
+            if let Some(trailing) = s.strip_prefix(']') {
+                return Ok((Self::List(list), trailing));
+            }
+            if s.is_empty() {
+                return Err(UnclosedList);
+            }
+            loop {
+                let (value, trailing) = Self::parse_one(s)?;
+                list.push(value);
+                let (c, trailing) = {
+                    let mut chars = trailing.chars();
+                    (chars.next(), chars.as_str())
+                };
+                match c {
+                    Some(',') => (),
+                    Some(']') => return Ok((Self::List(list), trailing)),
+                    Some(c) => return Err(InvalidSeparator(c)),
+                    None => return Err(UnclosedList),
+                }
+                s = trailing;
+            }
+        } else {
+            let terminator = s.find([',', ']']).unwrap_or(s.len());
+            let (s, trailing) = s.split_at(terminator);
+            Ok((Self::Int(s.parse()?), trailing))
+        }
+    }
+}
+
+impl Ord for Packet {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if let (Self::Int(a), Self::Int(b)) = (self, other) {
+            a.cmp(b)
+        } else {
+            self.as_slice().cmp(other.as_slice())
+        }
+    }
+}
+
+impl PartialOrd for Packet {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Packet {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other).is_eq()
+    }
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum ParsePacketError {
+    #[error("invalid integer value: {0}")]
+    InvalidInt(#[from] ParseIntError),
+    #[error("invalid list separator: {0:?}")]
+    InvalidSeparator(char),
+    #[error("unclosed list value")]
+    UnclosedList,
+    #[error("trailing data after the packet")]
+    TrailingData,
+}
+
+impl FromStr for Packet {
+    type Err = ParsePacketError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (value, trailing) = Self::parse_one(s)?;
+        if trailing.is_empty() {
+            Ok(value)
+        } else {
+            Err(Self::Err::TrailingData)
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! packet {
+    ($n:literal) => {
+        $crate::Packet::Int($n)
+    };
+    ([$($i:tt),*]) => {
+        $crate::Packet::List(vec![
+            $(
+                $crate::packet!($i)
+            ),*
+        ])
+    };
+}
 
 fn main() {
-    let (_, packets) = all_consuming(parse_all_packets)(include_str!("../input.txt"))
-        .finish()
-        .unwrap();
+    let divider_a = packet!([[2]]);
+    let divider_b = packet!([[6]]);
+    let mut all_packets = vec![divider_a.clone(), divider_b.clone()];
+    let mut right_order_pairs = 0usize;
 
-    println!("packets: {:?}", packets);
+    let mut lines = include_str!("../input.txt").lines();
+    for pair_num in 1.. {
+        let a = lines.next().unwrap().parse().unwrap();
+        let b = lines.next().unwrap().parse().unwrap();
+
+        if a <= b {
+            right_order_pairs += pair_num;
+        }
+        all_packets.push(a);
+        all_packets.push(b);
+
+        match lines.next() {
+            None => break,
+            Some("") => continue,
+            Some(other) => panic!("Expected blank line, not {other:?}"),
+        }
+    }
+
+    println!("Correctly ordered pairs: {right_order_pairs}");
+
+    all_packets.sort();
+    let mut decoder_key = 1;
+    for (i, packet) in all_packets.iter().enumerate() {
+        if packet == &divider_a || packet == &divider_b {
+            decoder_key *= i + 1;
+        }
+    }
+
+    println!("Decoder key: {decoder_key}");
 }
-
-fn int_list_parser(input: &str) -> IResult<&str, Vec<PacketContent>> {
-    delimited(
-        tag("["),
-        separated_list0(
-            tag(","),
-            map(int_parser, PacketContent::Integer)
-                .or(map(int_list_parser, PacketContent::Sublist)),
-        ),
-        tag("]"),
-    )(input)
-}
-
-fn int_parser(input: &str) -> IResult<&str, u64> {
-    u64(input)
-}
-
-fn packet_parser(input: &str) -> IResult<&str, Packet> {
-    map(int_list_parser, |contents| Packet { list: contents })(input)
-}
-
-fn parse_packet_pair(i: &str) -> IResult<&str, PacketPair> {
-    map(
-        terminated(
-            separated_pair(packet_parser, line_ending, packet_parser),
-            line_ending,
-        ),
-        |(first, second)| PacketPair {
-            0: first,
-            1: second,
-        },
-    )(i)
-}
-#[derive(Debug)]
-struct PacketPair(Packet, Packet);
-
-#[derive(Debug, Clone)]
-enum PacketContent {
-    Integer(u64),
-    Sublist(Vec<PacketContent>),
-}
-
-#[derive(Debug, Clone)]
-struct Packet {
-    list: Vec<PacketContent>,
-}
-
-fn parse_all_packets(input: &str) -> IResult<&str, Vec<PacketPair>> {
-    separated_list1(tag("\n"), parse_packet_pair)(input)
-}
-
-// fn parse_packet(input: &str) -> IResult<&str, PacketPair> {
-//     println!("input: {}", input);
-//     let (_, packets) = packet_parser(input).unwrap();
-//     println!("{:?}", packets);
-//     Ok(("", PacketPair(vec![], vec![])))
-// }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn test_int_list_parser() {
-//         let (_, (_, result, _)) = int_list_parser("[1,3,5,7,9]").unwrap();
-//         assert_eq!(result, vec![1, 3, 5, 7, 9]);
-
-//         let (_, (_, result, _)) = int_list_parser("[1]").unwrap();
-//         assert_eq!(result, vec![1]);
-//     }
-
-//     #[test]
-//     fn test_int_parser() {
-//         let (_, (_, result, _)) = int_parser("4").unwrap();
-//         assert_eq!(result, vec![4]);
-//     }
-
-//     #[test]
-//     fn test_packet_parser() {
-//         let (_, (_, result, _)) = packet_parser("4").unwrap();
-//         assert_eq!(result, vec![4]);
-//         let (_, (_, result, _)) = packet_parser("[4]").unwrap();
-//         assert_eq!(result, vec![4]);
-
-//         let (_, (_, result, _)) = packet_parser("[4,5,6]").unwrap();
-//         assert_eq!(result, vec![4, 5, 6]);
-
-//         let (_, (_, result, _)) = packet_parser("[[4],[5,6]]").unwrap();
-//         assert_eq!(result, vec![vec![4], vec![5, 6]]);
-//     }
-// }
