@@ -13,7 +13,7 @@ fn main() {
         fill_missing_points(&mut lines[n]);
     }
 
-    let mut cave: Vec<Vec<u64>> = vec![vec![0; 600]; 600];
+    let mut cave: Vec<Vec<u64>> = vec![vec![0; 1000]; 1000]; // try do it without simulating the grid -> use a hashset of points
     let mut lowest_rock = 0;
 
     for line in lines {
@@ -25,9 +25,17 @@ fn main() {
         }
     }
 
+    let part_one_units = part_one(&mut cave.clone(), lowest_rock);
+    let part_two_units = part_two(&mut cave.clone(), lowest_rock);
+
+    println!("part_one: {}", part_one_units);
+    println!("part_two: {}", part_two_units);
+}
+
+fn part_one(cave: &mut Vec<Vec<u64>>, lowest_rock: u64) -> u64 {
     const STARTING_POINT: (usize, usize) = (500, 0);
 
-    let mut units = 0;
+    let mut units: u64 = 0;
 
     'outer: loop {
         units += 1;
@@ -58,8 +66,52 @@ fn main() {
             }
         }
     }
+    units - 1
+}
 
-    print!("part_one: {}", units - 1);
+fn part_two(cave: &mut Vec<Vec<u64>>, lowest_rock: u64) -> u64 {
+    const STARTING_POINT: (usize, usize) = (500, 0);
+    let floor = lowest_rock + 2;
+
+    for x in 0..cave.len() {
+        cave[x][floor as usize] = 1;
+    }
+
+    let mut units: u64 = 0;
+
+    'outer: loop {
+        units += 1;
+        let mut pos = STARTING_POINT;
+
+        'inner: loop {
+            if cave[pos.0][pos.1] == 1
+                && cave[pos.0 - 1][pos.1 + 1] == 1
+                && cave[pos.0 + 1][pos.1 + 1] == 1
+            {
+                break 'outer;
+            }
+            if cave[pos.0][pos.1 + 1] == 0 {
+                pos.1 += 1;
+                continue 'inner;
+            }
+
+            if cave[pos.0][pos.1 + 1] == 1 {
+                if cave[pos.0 - 1][pos.1 + 1] == 0 {
+                    pos.0 -= 1;
+                    pos.1 += 1;
+                    continue 'inner;
+                } else if cave[pos.0 + 1][pos.1 + 1] == 0 {
+                    pos.0 += 1;
+                    pos.1 += 1;
+                    continue 'inner;
+                } else {
+                    cave[pos.0][pos.1] = 1;
+                    continue 'outer;
+                }
+            }
+        }
+    }
+    units - 1
 }
 
 fn parse_line(input: &str) -> IResult<&str, Vec<(u64, u64)>> {
