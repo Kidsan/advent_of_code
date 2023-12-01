@@ -1,4 +1,4 @@
-use std::{cell::RefCell, cmp, collections::HashMap, hash::Hash};
+use std::{cell::RefCell, cmp, collections::HashMap};
 
 use nom::{
     branch::alt,
@@ -45,7 +45,7 @@ fn main() {
         &mut part_one_answer,
     );
 
-    let part_two = visit(
+    let _part_two = visit(
         String::from("AA"),
         26,
         0,
@@ -60,10 +60,8 @@ fn main() {
 
     for (k1, v1) in part_two_answer.iter() {
         for (k2, v2) in part_two_answer.iter() {
-            if (k1 & k2) == 0 {
-                if (v1 + v2) > part_two_result {
-                    part_two_result = v1 + v2;
-                }
+            if (k1 & k2) == 0 && (v1 + v2) > part_two_result {
+                part_two_result = v1 + v2;
             }
         }
     }
@@ -81,12 +79,11 @@ fn visit<'a>(
     flow: i64,
     answer: &'a mut HashMap<i64, i64>,
 ) -> &'a mut HashMap<i64, i64> {
-    let n: i64;
-    if !answer.contains_key(&state) {
-        n = 0
+    let n = if !answer.contains_key(&state) {
+        0
     } else {
-        n = *answer.get(&state).unwrap();
-    }
+        *answer.get(&state).unwrap()
+    };
     answer.insert(state, cmp::max(n, flow));
     for k in cave
         .iter()
@@ -110,14 +107,14 @@ fn visit<'a>(
                 k.to_string(),
                 new_budget,
                 state | mask,
-                &cave,
-                &distances,
+                cave,
+                distances,
                 flow + (new_budget * flow_here),
                 answer,
             );
         }
     }
-    return answer;
+    answer
 }
 
 fn calc_distances(cave: &HashMap<&str, Valve>) -> HashMap<(String, String), RefCell<i64>> {
