@@ -24,6 +24,7 @@
             pkg-config
             buildPackages.go_1_21
             nixpkgs-fmt
+            rust-analyzer-unwrapped
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
         };
